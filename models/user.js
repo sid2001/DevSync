@@ -27,6 +27,10 @@ const userSchema = new Schema({
   plan:{
     type:String,
     default:'basic'
+  },
+  emailVerified:{
+    type:Boolean,
+    default:false
   }
 })
 userSchema.statics.isValidUsername = async function(username){

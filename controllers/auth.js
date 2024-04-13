@@ -16,6 +16,21 @@ async function postLogIn(req,res,next) {
   // bcrypt.hash(password,12,async function(err,passwordHash) {
     // if(err) next(err);
     // else{
+      await redisClient.hGetAll('PendingRegistrations')
+      .then((reply)=>{
+        console.log(reply);
+        for(const regId in registrations){
+          const registration = JSON.parse(registration[regId]);
+          if(registration.username===username&&registration.password===password){
+            res.status(401).json(
+              {
+                "type":"error",
+                "message":"Email Not verified!!"
+              }
+            )
+          }
+        }
+      })
       const [flag,user] = await User.isValidUser({username,passwordHash});
       console.log(flag,user);
       if(flag){
@@ -36,14 +51,24 @@ async function postLogIn(req,res,next) {
             if(err) next(err);
             else{
               res.status(200).json({
-              "type":"token",
-              "token":token
+              "type":"success",
+              "token":token,
+              "userData":{
+                username,
+                _id,
+                plan,
+                email,
+                name:`${name.first} ${name.last}`
+              }
               })
             }
           }
         );
       }else{
-        res.status(400).send('Invalid Credentials');
+        res.status(400).json({
+          "type":"error",
+          "message":"Invalid credentials"
+        });
       }
     //}
   // })

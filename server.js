@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const multer = require("multer");
 const cors = require('cors');
 const path = require('path');
+const {v4:uuidv4} = require('uuid');
 
 require('dotenv').config();
 // app.set('views', path.join(__dirname, 'views'));
@@ -22,7 +23,7 @@ app.use(express.urlencoded({extended:false}));
 app.use(authRoutes);
 app.use((err,req,res,next)=>{
   console.log(err);
-  res.status(500).json({message:err});
+  res.status(400).json({message:err});
 })
 mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
 .then(()=>{
@@ -33,6 +34,9 @@ mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
       const httpServer = app.listen({host:process.env.HOST,port:process.env.PORT},()=>{
       console.log(`server started at port ${process.env.PORT}`);
       })
+    function messageHandler(message){
+      const json = JSON.parse(message.toString('utf8'));
+    }
 
     const wss = new WebSocketServer(
       {
@@ -45,7 +49,15 @@ mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
 
     wss.on('connection',(ws,req)=>{
       console.log("New ws connection!!");
-      // redisClient.hSet('ActiveSessions',)
+      const sessionId = uuidv4();
+      console.log('new session: ',sessionId);
+
+      const sessionData = {
+        ...req.userData,
+        socket:ws,
+      };
+      
+      redisClient.hSet('ActiveSessions',sessionId,JSON.stringify(sessionData));
       console.log(req.socket.remoteAddress);
     })
   })
