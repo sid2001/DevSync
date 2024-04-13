@@ -6,8 +6,14 @@ const mongoose = require("mongoose");
 const {redisClient} = require('./redis');
 const authRoutes = require('./routes/auth');
 const multer = require("multer");
-require('dotenv').config();
+const cors = require('cors');
+const path = require('path');
 
+require('dotenv').config();
+// app.set('views', path.join(__dirname, 'views'));
+app.set("view engine", "ejs");
+app.set('views', path.join(__dirname, 'views'));
+app.use(cors());
 app.use(multer().none());//text only form data
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));

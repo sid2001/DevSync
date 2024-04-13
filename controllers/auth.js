@@ -81,7 +81,7 @@ async function postRegister(req,res,next) {
       }
     }
   )
-  const link = `http://localhost:3000/confirmRegistration/${regId};${otp}`;
+  const link = `http://fb78-136-233-9-98.ngrok-free.app/confirmRegistration/${regId};${otp}`;
   const mailOptions = {
     from:process.env.MAIL_USER,
     to:email,
@@ -133,10 +133,11 @@ async function confrimRegistration(req,res,next){
       .then(async (reply)=>{
         await user.save()
         .then((doc)=>{
-            res.status(200).json({
-              "type":"success",
-              "message":"Registration Successful"
-            })
+            // res.status(200).json({
+            //   "type":"success",
+            //   "message":"Registration Successful"
+            // })
+            res.render("registered");
         }).catch((err)=>{
           next(err);
         })
