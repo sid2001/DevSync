@@ -5,14 +5,19 @@ const {verifyClient} = require('./utils/scripts/auth');
 const mongoose = require("mongoose");
 const {redisClient} = require('./redis');
 const authRoutes = require('./routes/auth');
+const multer = require("multer");
 require('dotenv').config();
 
+app.use(multer().none());//text only form data
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));
 
 
 app.use(authRoutes);
-
+app.use((err,req,res,next)=>{
+  console.log(err);
+  res.status(500).json({message:err});
+})
 mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
 .then(()=>{
   console.log('DB connected!!');
