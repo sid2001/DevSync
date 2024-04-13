@@ -1,0 +1,23 @@
+{
+  "name": "devsync",
+  "version": "1.0.0",
+  "description": "Access local device remotely",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon run server.js"
+  },
+  "author": "sisa",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.1",
+    "nodemailer": "^6.9.13",
+    "nodemon": "^3.1.0",
+    "redis": "^4.6.13",
+    "ws": "^8.16.0"
+  }
+}
