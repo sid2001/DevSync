@@ -9,69 +9,64 @@ const { ConnectionStates } = require('mongoose');
 
 require('dotenv').config();
 
-async function postLogIn(req,res,next) {
-  const {username,password} = req.body;
-  console.log('login request',username,password);
-  const passwordHash = password;
-  // bcrypt.hash(password,12,async function(err,passwordHash) {
-    // if(err) next(err);
-    // else{
-      await redisClient.hGetAll('PendingRegistrations')
-      .then((reply)=>{
-        console.log(reply);
-        for(const regId in registrations){
-          const registration = JSON.parse(registration[regId]);
-          if(registration.username===username&&registration.password===password){
-            res.status(401).json(
-              {
-                "type":"error",
-                "message":"Email Not verified!!"
-              }
-            )
-          }
-        }
-      })
-      const [flag,user] = await User.isValidUser({username,passwordHash});
-      console.log(flag,user);
-      if(flag){
-        const {email,name,plan,_id} = user;
-        let expiresIn;
-        if(plan==='basic'){
-          expiresIn = '1h'
-        }else if(plan==='standard'||plan==='premium'){
-          expiresIn = '999d'
-        }else{
-          next(err,'Invalid Plan');
-        }
-        const token = jwt.sign(
-          {username,email,plan,name,_id},
-          process.env.JWT_SECRET,
-          {algorithm: 'HS256',expiresIn:expiresIn},
-          function(err,token){
-            if(err) next(err);
-            else{
-              res.status(200).json({
-              "type":"success",
-              "token":token,
-              "userData":{
-                username,
-                _id,
-                plan,
-                email,
-                name:`${name.first} ${name.last}`
-              }
-              })
+async function postLogIn(req, res, next) {
+    try {
+        const { username, password } = req.body;
+        console.log('login request', username, password);
+        const passwordHash = password; // Assuming password is already hashed
+
+        const reply = await redisClient.hGetAll('PendingRegistrations');
+
+        for (const regId in reply) {
+            const registration = JSON.parse(reply[regId]);
+            if (registration.username === username && registration.password === password) {
+                res.status(401).json({
+                    "type": "error",
+                    "message": "Email not verified"
+                });
+                return next(); // Exit middleware
             }
-          }
-        );
-      }else{
-        res.status(400).json({
-          "type":"error",
-          "message":"Invalid credentials"
-        });
-      }
-    //}
-  // })
+        }
+
+        const [flag, user] = await User.isValidUser({ username, passwordHash });
+
+        if (flag) {
+            const { email, name, plan, _id } = user;
+            let expiresIn;
+            if (plan === 'basic') {
+                expiresIn = '1h';
+            } else if (plan === 'standard' || plan === 'premium') {
+                expiresIn = '999d';
+            } else {
+                throw new Error('Invalid Plan');
+            }
+
+            const token = jwt.sign(
+                { username, email, plan, name, _id },
+                process.env.JWT_SECRET,
+                { algorithm: 'HS256', expiresIn: expiresIn }
+            );
+
+            res.status(200).json({
+                "type": "success",
+                "token": token,
+                "userData": {
+                    username,
+                    _id,
+                    plan,
+                    email,
+                    name: `${name.first} ${name.last}`
+                }
+            });
+        } else {
+            res.status(400).json({
+                "type": "error",
+                "message": "Invalid credentials"
+            });
+        }
+    } catch (err) {
+        next(err, 'Internal Server Error');
+    }
 }
 
 async function postRegister(req,res,next) {
@@ -106,7 +101,7 @@ async function postRegister(req,res,next) {
       }
     }
   )
-  const link = `http://fb78-136-233-9-98.ngrok-free.app/confirmRegistration/${regId};${otp}`;
+  const link = `http://${process.env.PUBLIC_HOST}/confirmRegistration/${regId};${otp}`;
   const mailOptions = {
     from:process.env.MAIL_USER,
     to:email,
@@ -181,3 +176,76 @@ async function confrimRegistration(req,res,next){
 module.exports.postLogIn = postLogIn;
 module.exports.postRegister = postRegister;
 module.exports.confrimRegistration = confrimRegistration;
+
+
+// async function postLogIn(req,res,next) {
+//   const {username,password} = req.body;
+//   console.log('login request',username,password);
+//   const passwordHash = password;
+//   // bcrypt.hash(password,12,async function(err,passwordHash) {
+//     // if(err) next(err);
+//     // else{
+//       redisClient.hGetAll('PendingRegistrations')
+//       .then((reply)=>{
+//         console.log(reply);
+//         for(const regId in reply){
+//           const registration = JSON.parse(reply[regId]);
+//           if(registration.username===username&&registration.password===password){
+//             res.status(401).json(
+//               {
+//                 "type":"error",
+//                 "message":"Email not verified"
+//               }
+//             )
+//             return next();
+//           }
+//         }
+//       })
+//       .then(async(data)=>{
+//         const [flag,user] = await User.isValidUser({username,passwordHash});
+//         console.log(flag,user);
+//         if(flag){
+//           const {email,name,plan,_id} = user;
+//           let expiresIn;
+//           if(plan==='basic'){
+//             expiresIn = '1h'
+//           }else if(plan==='standard'||plan==='premium'){
+//             expiresIn = '999d'
+//           }else{
+//             next(err,'Invalid Plan');
+//           }
+//           const token = jwt.sign(
+//             {username,email,plan,name,_id},
+//             process.env.JWT_SECRET,
+//             {algorithm: 'HS256',expiresIn:expiresIn},
+//             function(err,token){
+//               if(err) next(err);
+//               else{
+//                 res.status(200).json({
+//                 "type":"success",
+//                 "token":token,
+//                 "userData":{
+//                   username,
+//                   _id,
+//                   plan,
+//                   email,
+//                   name:`${name.first} ${name.last}`
+//                 }
+//                 })
+//               }
+//             }
+//           );
+//         }else{
+//           res.status(400).json({
+//             "type":"error",
+//             "message":"Invalid credentials"
+//           });
+//         }
+//       })
+//       .catch(err=>{
+//         next(err,'Internal Server Error');
+//       })
+      
+//     //}
+//   // })
+// }
