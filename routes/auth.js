@@ -1,7 +1,13 @@
 const router = require('express').Router();
-const {postRegister, postLogIn} = require('../controllers/auth');
+const {postRegister, postLogIn,confrimRegistration} = require('../controllers/auth');
 
-// router.post('/login', )
+// login user
+router.post('/login',postLogIn);
+
+//register user
 router.post('/register',postRegister);
+
+//verify account registration
+router.get('/confirmRegistration/:tag',confrimRegistration);
 
 module.exports = router;

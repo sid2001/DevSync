@@ -9,17 +9,29 @@ const { ConnectionStates } = require('mongoose');
 
 require('dotenv').config();
 
-function postLogin(req,res,next) {
+async function postLogIn(req,res,next) {
   const {username,password} = req.body;
-
-  bcrypt.hash(password,12,function(err,hashedPassword) {
-    if(err) next(err);
-    else{
-      if(User.isValidUser({username,hashedPassword})){
+  console.log('login request',username,password);
+  const passwordHash = password;
+  // bcrypt.hash(password,12,async function(err,passwordHash) {
+    // if(err) next(err);
+    // else{
+      const [flag,user] = await User.isValidUser({username,passwordHash});
+      console.log(flag,user);
+      if(flag){
+        const {email,name,plan,_id} = user;
+        let expiresIn;
+        if(plan==='basic'){
+          expiresIn = '1h'
+        }else if(plan==='standard'||plan==='premium'){
+          expiresIn = '999d'
+        }else{
+          next(err,'Invalid Plan');
+        }
         const token = jwt.sign(
-          {username},
+          {username,email,plan,name,_id},
           process.env.JWT_SECRET,
-          {algorithm: 'HS256',expiresIn:'1h'},
+          {algorithm: 'HS256',expiresIn:expiresIn},
           function(err,token){
             if(err) next(err);
             else{
@@ -33,8 +45,8 @@ function postLogin(req,res,next) {
       }else{
         res.status(400).send('Invalid Credentials');
       }
-    }
-  })
+    //}
+  // })
 }
 
 async function postRegister(req,res,next) {
@@ -87,20 +99,59 @@ async function postRegister(req,res,next) {
     next(err);
   })
 }
-function confrimRegistration(req,res,next){
+async function confrimRegistration(req,res,next){
   const [regId,otp] = req.params.tag.split(';');
-  redisClient.hGet('PendingRegistrations',regId,(err,reply)=>{
-    if(err) next(err);
-    else{
-      const {username,password,email,name} = JSON.parse(reply);
-      if(otp===reply.otp){
-        const user = new User({username,password,email,name})
-      }else{
-        res.status(400).send('Invalid OTP or link expired');
-      }
+
+  console.log('request for confirmation:',regId,otp);
+
+  redisClient.hGet('PendingRegistrations',regId)
+  .then((reply)=>{
+    console.log("registering user:",reply);
+    const json = JSON.parse(reply);
+    const {username,password,email,name} = json;
+    // const passwordHash = bcrypt.hashSync(password,12);
+    const passwordHash = password;
+    const first = name.split(' ')[0];
+    let last;
+    try{
+      last = name.split(' ')[1];
+    }catch(err){
+      console.log(err);
     }
+    const userdata = {
+      username,
+      passwordHash,
+      name:{
+        first,
+        last:last?last:''
+      },
+      email
+    }
+    if(otp===json.otp){
+      const user = new User(userdata);
+      redisClient.hDel('PendingRegistrations',regId)
+      .then(async (reply)=>{
+        await user.save()
+        .then((doc)=>{
+            res.status(200).json({
+              "type":"success",
+              "message":"Registration Successful"
+            })
+        }).catch((err)=>{
+          next(err);
+        })
+      }).catch((err)=>{
+        next(err);
+      })
+    }else{
+      res.status(400).send('Invalid OTP or link expired');
+    }
+    }
+  ).catch((err)=>{
+    next(err);
   })
+  console.log('after');
 }
-module.exports.postLogin = postLogin;
+module.exports.postLogIn = postLogIn;
 module.exports.postRegister = postRegister;
 module.exports.confrimRegistration = confrimRegistration;

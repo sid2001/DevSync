@@ -39,7 +39,7 @@ mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
 
     wss.on('connection',(ws,req)=>{
       console.log("New ws connection!!");
-    
+      // redisClient.hSet('ActiveSessions',)
       console.log(req.socket.remoteAddress);
     })
   })

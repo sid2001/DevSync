@@ -23,6 +23,10 @@ const userSchema = new Schema({
   email:{
     type:String,
     required:true
+  },
+  plan:{
+    type:String,
+    default:'basic'
   }
 })
 userSchema.statics.isValidUsername = async function(username){
@@ -55,9 +59,11 @@ userSchema.statics.isUniqueUsername = async function(username){
 userSchema.statics.isValidUser = async function({username,passwordHash}){
   try{
     const user = await User.findOne({username:username});
-    if(!user) return false;
-    else if(user.passwordHash === passwordHash) return true;
-    else return false;
+    console.log(user);
+    console.log(passwordHash);
+    if(!user) return [false,null];
+    else if(user.passwordHash === passwordHash) return [true,user];
+    else return [false,null];
   }catch(err){
     console.error('Error while validating user: ',err);
   }
