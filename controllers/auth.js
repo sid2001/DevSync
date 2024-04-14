@@ -10,63 +10,58 @@ const { ConnectionStates } = require('mongoose');
 require('dotenv').config();
 
 async function postLogIn(req, res, next) {
-    try {
-        const { username, password } = req.body;
-        console.log('login request', username, password);
-        const passwordHash = password; // Assuming password is already hashed
-
-        const reply = await redisClient.hGetAll('PendingRegistrations');
-
-        for (const regId in reply) {
-            const registration = JSON.parse(reply[regId]);
-            if (registration.username === username && registration.password === password) {
-                res.status(401).json({
-                    "type": "error",
-                    "message": "Email not verified"
-                });
-                return next(); // Exit middleware
-            }
-        }
-
-        const [flag, user] = await User.isValidUser({ username, passwordHash });
-
-        if (flag) {
-            const { email, name, plan, _id } = user;
-            let expiresIn;
-            if (plan === 'basic') {
-                expiresIn = '1h';
-            } else if (plan === 'standard' || plan === 'premium') {
-                expiresIn = '999d';
-            } else {
-                throw new Error('Invalid Plan');
-            }
-
-            const token = jwt.sign(
-                { username, email, plan, name, _id },
-                process.env.JWT_SECRET,
-                { algorithm: 'HS256', expiresIn: expiresIn }
-            );
-
-            res.status(200).json({
-                "type": "success",
-                "token": token,
-                "userData": {
-                    username,
-                    _id,
-                    plan,
-                    email,
-                    name: `${name.first} ${name.last}`
-                }
-            });
-        } else {
-            res.status(400).json({
-                "type": "error",
-                "message": "Invalid credentials"
-            });
-        }
-    } catch (err) {
-        next(err, 'Internal Server Error');
+  try {
+    const { username, password } = req.body;
+    console.log('login request', username, password);
+    const passwordHash = password; // Assuming password is already hashed
+    const reply = await redisClient.hGetAll('PendingRegistrations');
+    
+    for (const regId in reply) {
+      const registration = JSON.parse(reply[regId]);
+      if (registration.username === username && registration.password === password) {
+        res.status(401).json({
+          "type": "error",
+          "message": "Email not verified"
+        });
+        return next(); // Exit middleware
+      }
     }
+    const [flag, user] = await User.isValidUser({ username, passwordHash });
+    if (flag) {
+      const { email, name, plan, _id } = user;
+      let expiresIn;
+      if (plan === 'basic') {
+        expiresIn = '1h';
+      } else if (plan === 'standard' || plan === 'premium') {
+        expiresIn = '999d';
+      } else {
+        throw new Error('Invalid Plan');
+      }
+      const token = jwt.sign(
+        { username, email, plan, name, _id },
+        process.env.JWT_SECRET,
+        { algorithm: 'HS256', expiresIn: expiresIn }
+      );
+      res.status(200).json({
+        "type": "success",
+        "token": token,
+        "userData": {
+          username,
+          _id,
+          plan,
+          email,
+          name: `${name.first} ${name.last}`
+        }
+      });
+    } else {
+        res.status(400).json({
+            "type": "error",
+            "message": "Invalid credentials"
+        });
+    }
+  } catch (err) {
+      next(err, 'Internal Server Error');
+  }
 }
 
 async function postRegister(req,res,next) {

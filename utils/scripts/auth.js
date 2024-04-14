@@ -2,9 +2,11 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 function verifyClient(info,cb){
-  const token = info.req.headers['authorization'].split(' ')[1].trim();
-  console.log('token from verifier:',token);
+  
   try{
+    console.log('headers: ',info.req.url);
+    const token = info.req.url.split('=')[1].trim();
+    // console.log('token from verifier:',token);
     const tokenData = jwt.verify(token,process.env.JWT_SECRET);
     console.log('tokeData: ',tokenData);
 
@@ -19,7 +21,7 @@ function verifyClient(info,cb){
     info.req.userData = userData;
   }catch(err){
     console.error(err);
-    cb(false,401,'Unauthorized');
+    cb(false,401,'Token expired or invalid');
   }
   cb(true);
 }

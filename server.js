@@ -9,6 +9,7 @@ const multer = require("multer");
 const cors = require('cors');
 const path = require('path');
 const {v4:uuidv4} = require('uuid');
+const {startChildProcess} = require('./utils/scripts/childProcess.js');
 
 require('dotenv').config();
 // app.set('views', path.join(__dirname, 'views'));
@@ -34,8 +35,26 @@ mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
       const httpServer = app.listen({host:process.env.HOST,port:process.env.PORT},()=>{
       console.log(`server started at port ${process.env.PORT}`);
       })
-    function messageHandler(message){
+    async function messageHandler(message){
+      console.log(message.toString('utf8'));
       const json = JSON.parse(message.toString('utf8'));
+      switch(json.type){
+        case 'command':{
+          console.log(json.data.sessionId);
+          const userData = await redisClient.hGet('ActiveSessions',json.data.sessionId);
+          // console.log(userData);
+          const sessionData = JSON.parse(userData);
+          const instructions = json.data;
+          const socket = this;
+          // console.log(sessionData.socket);
+          startChildProcess({socket,sessionData,instructions});
+          break;
+        }
+        default:{
+          this.send(JSON.stringify({type:"error",data:"Invalid message type."}));
+          console.error("Invalid message type");
+        }
+      }
     }
 
     const wss = new WebSocketServer(
@@ -56,14 +75,21 @@ mongoose.connect(process.env.MONGO_DB_URI,{dbName:'devsync'})
         ...req.userData,
         socket:ws,
       };
-      
+      ws.on('message',messageHandler);
+
       redisClient.hSet('ActiveSessions',sessionId,JSON.stringify(sessionData));
       console.log(req.socket.remoteAddress);
+
+      const payload = {
+        type:"welcome",
+        data:{
+          sessionId,
+          userData:req.userData
+        }
+      }
+      ws.send(JSON.stringify(payload));
     })
   })
   .catch(console.error)
 })
 .catch(console.error);
-
-
-
