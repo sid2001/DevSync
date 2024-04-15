@@ -6,8 +6,11 @@ const process = require('process');
 function startChildProcess({socket,sessionData,instructions}) {
 
   const baseDirectory = instructions.baseDirectory;
+  console.log
   const command = instructions.command;
-  const fullCommand = `cd ${baseDirectory} && ${command}`;
+  const directory = baseDirectory;
+  const fullCommand = `cd ${directory} && ${command} && cd`;
+  console.log('full command: ',fullCommand);
   const childProcess = spawn(fullCommand,{
     shell:true
   })
