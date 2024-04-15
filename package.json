@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon run server.js"
+    "start": "nodemon run server.js",
+    "build": "mkdir dist && babel ./ -s -d dist"
   },
   "author": "sisa",
   "license": "ISC",
@@ -21,8 +22,13 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.13",
     "nodemon": "^3.1.0",
+    "otp-generator": "^4.0.1",
     "path": "^0.12.7",
     "redis": "^4.6.13",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.1",
+    "@babel/core": "^7.24.4"
   }
 }

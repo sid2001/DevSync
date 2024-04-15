@@ -1,6 +1,8 @@
 const router = require('express').Router();
-const getVideoFile = require('../controllers/fileStream');
+const {getVideo,getVideoFile} = require('../controllers/fileStream');
 
 router.get('/mediaFile/:filepath',getVideoFile);
+
+router.get('/video',getVideo);
 
 module.exports = router;
