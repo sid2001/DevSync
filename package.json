@@ -25,6 +25,7 @@
     "otp-generator": "^4.0.1",
     "path": "^0.12.7",
     "redis": "^4.6.13",
+    "uuid": "^9.0.1",
     "ws": "^8.16.0"
   },
   "devDependencies": {
